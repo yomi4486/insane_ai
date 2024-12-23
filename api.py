@@ -2,20 +2,11 @@
 from fastapi import FastAPI,HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-import json
-from os.path import join, dirname
-from dotenv import load_dotenv
 from transformers import AutoTokenizer, AutoModelForCausalLM
-
+import random
 tokenizer = AutoTokenizer.from_pretrained("rinna/japanese-gpt2-medium", use_fast=False)
 tokenizer.do_lower_case = True  # due to some bug of tokenizer config loading
 model = AutoModelForCausalLM.from_pretrained("rinna/japanese-gpt2-medium")
-
-load_dotenv(verbose=True)
-dotenv_path = join(dirname(__file__), '.env')
-load_dotenv(dotenv_path)
-
-#token = os.environ.get("TOKEN")
 
 async def create_text(input_text):
     inputs = tokenizer.encode_plus(input_text,
@@ -26,12 +17,15 @@ async def create_text(input_text):
     input_ids, attention_mask = inputs["input_ids"], inputs["attention_mask"]
 
     # Generate the output
-    outputs = model.generate(input_ids,
-                             attention_mask=attention_mask,
-                             max_length=100,
-                             num_return_sequences=1,
-                             temperature=0.1,
-                             no_repeat_ngram_size=2)
+    outputs = model.generate(
+        input_ids,
+        attention_mask=attention_mask,
+        max_length=128,
+        num_return_sequences=random.randint(1,5),
+        temperature=random.random(),
+        do_sample=True,
+        no_repeat_ngram_size=random.randint(1,5)
+    )
 
     response = tokenizer.decode(outputs[0], skip_special_tokens=True)
     return response[len(input_text):]
@@ -50,15 +44,11 @@ app.add_middleware(
 )
 
 @app.get("/")
-async def get_image(token:str=None,prompt:str=None):
-
-    json_load = json.load(open('./token/token.json','r'))
-    if (not token in json_load) or (not token):
-        print("Token Invalid")
-        raise HTTPException(status_code=403, detail="Token invalid")
+async def get_image(prompt:str=None):
     if not prompt:
         print("Prompt Invalid")
         raise HTTPException(status_code=403, detail="Prompt Invalid")
-    return_text = await create_text(prompt)
 
+    return_text = await create_text(prompt)
+    
     return JSONResponse(content={"datail":return_text})
