@@ -48,7 +48,7 @@ async def get_image(prompt:str=None):
     if not prompt:
         print("Prompt Invalid")
         raise HTTPException(status_code=403, detail="Prompt Invalid")
-
+    
     return_text = await create_text(prompt)
     
     return JSONResponse(content={"datail":return_text})

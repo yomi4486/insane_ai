@@ -1,2 +1,5 @@
 fastapi
-dotenv
+uvicorn
+git+https://github.com/huggingface/diffusers.git@main
+tokenizer
+transformers
